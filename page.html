@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Контроллер gpio</title>
+	<style>
+	body {
+		margin: 0;
+		padding: 10px 15px;
+		font-family: Arial;
+	}
+	body * {
+		box-sizing: border-box;
+	}
+	p {
+		margin: 0;
+		padding: 0;
+	}
+	button {
+		cursor: pointer;
+	}
+	.services_tab {
+		display: flex;
+		justify-content: space-around;
+		flex-wrap: wrap;
+		margin-bottom: 20px;
+	}
+	.services_tab__detail {
+		position: relative;
+		line-height: inherit;
+		text-align: center;
+		border: none;
+		background: none;
+		font-size: 16px;
+		font-weight: 700;
+		line-height: inherit;
+		letter-spacing: 0.2em;
+		color: #000000;
+		text-transform: uppercase;
+	}
+	@media (max-width: 767px) {
+		.services_tab__detail {
+			max-width: 48%;
+		}
+	}
+
+	.services_tab__detail {
+		width: 160px;
+		padding: 10px 0;
+	}
+
+	.services_tab__detail::before {
+		content: "";
+		position: absolute;
+		top: 14px;
+		left: 0;
+		width: 100%;
+		height: 8px;
+		background-color: #f0c52e;
+		z-index: -1;
+	}
+	.services_tab__detail:hover {
+		background-color: #f0c52e;
+	}
+	.services_tab__detail:active {
+		color: #f7e184;
+		background-color: #000000;
+	}
+	.services .services_tab__detail.current {
+		display: block;
+		color: #f7e184;
+		background-color: #000000;
+	}
+	.tab_content {
+		margin: 0 -15px;
+		padding: 15px;
+			background-color: #e5e5e5;
+	}
+	.status {
+		display: grid;
+		grid-template-columns: auto auto auto;
+		align-items: flex-start;
+		justify-content: space-between;
+		grid-column-gap: 40px;
+		grid-row-gap: 20px;
+		max-width: 800px;
+		margin: 0 auto;
+	}
+	@media (max-width: 600px) {
+		.status {
+			grid-template-columns: 100%;
+		}
+	}
+	li.changed {
+		outline: 2px solid #f0c52e;
+	}
+	.rules_list,
+	.lamps_list,
+	.status__list,
+	.pins_list  {
+		grid-row: 1/4;
+		margin: 0;
+		padding-left: 0;
+		list-style: none;
+	}
+	.status__list li {
+		margin-bottom: 10px;
+	}
+	.status__list li {
+		display: grid;
+		grid-template-columns: 20px 1fr 50px;
+		grid-column-gap: 5px;
+		align-items: center;
+		min-height: 28px;
+	}
+	.status__list .disabled {
+		color: gray;
+	}
+	#status_in_list li {
+		grid-template-columns: 20px 1fr;
+	}
+	.status__list_indicator {
+		position: relative;
+		width: 20px;
+		height: 20px;
+		font-size: 0;
+		border-radius: 50%;
+		border: 2px solid #000;
+		background-color: #fff;
+	}
+	.status__list_indicator.active::before {
+		content: '';
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background-color: green;
+	}
+	.status__list .disabled button,
+	.disabled .status__list_indicator {
+		opacity: 0.3;
+	}
+	.status__list button {
+		padding: 5px 0;
+		text-align: center;
+		font-size: 15px;
+		background-color: #f0c52e;
+		border: none;
+		box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+	}
+	.status__list button:active {
+		box-shadow: none;
+	}
+
+	.status__text {
+		display: grid;
+		grid-template-columns: auto auto;
+		grid-column-gap: 15px;
+		grid-row-gap: 3px;
+		margin-left: auto;
+		font-size: 15px;
+	}
+	.entry_list__header,
+	.pins_list {
+		max-width: 500px;
+		margin: 0 auto;
+	}
+	.entry_list__header,
+	.pins_list li {
+		margin-bottom: 8px;
+	}
+	.pins_list li {
+		padding: 3px;
+	}
+	.entry_list__header,
+	.entry_list__item {
+		display: grid;
+		grid-template-columns: 20px 1fr 1fr 30px;
+		grid-column-gap: 15px;
+		align-items: center;
+	}
+	.entry_list__header--4,
+	#ins_list .entry_list__item {
+		grid-template-columns: 20px 1fr 130px 1fr 30px;
+	}
+	.entry_list__name {
+		max-width: 350px;
+		width: 100%;
+		padding: 3px 5px;
+		line-height: 16px;
+		border: 1px solid #464646;
+		background-color: #fff;
+	}
+	select {
+		width: 100%;
+		padding: 3px 5px;
+		line-height: 16px;
+		border: 1px solid #464646;
+		background-color: #fff;
+	}
+	.save_btn {
+		width: 30px;
+		height: 30px;
+		font-size: 0;
+		background-color: transparent;
+		border: none;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 407.096 407.096' style='enable-background:new 0 0 407.096 407.096;' xml:space='preserve'%3E%3Cpath d='M402.115,84.008L323.088,4.981C319.899,1.792,315.574,0,311.063,0H17.005C7.613,0,0,7.614,0,17.005v373.086 c0,9.392,7.613,17.005,17.005,17.005h373.086c9.392,0,17.005-7.613,17.005-17.005V96.032 C407.096,91.523,405.305,87.197,402.115,84.008z M300.664,163.567H67.129V38.862h233.535V163.567z'/%3E%3Cpath d='M214.051,148.16h43.08c3.131,0,5.668-2.538,5.668-5.669V59.584c0-3.13-2.537-5.668-5.668-5.668h-43.08 c-3.131,0-5.668,2.538-5.668,5.668v82.907C208.383,145.622,210.92,148.16,214.051,148.16z'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-size: 30px;
+		background-position: center;
+	}
+	.save_btn:focus,
+	.save_btn:hover,
+	.save_btn:active {
+		filter: invert(96%) sepia(46%) saturate(6340%) hue-rotate(330deg) brightness(98%) contrast(91%);
+	}
+	.settings {
+		display: grid;
+		grid-template-columns: repeat(2,1fr);
+		grid-column-gap: 30px;
+		max-width: 850px;
+		margin: 0 auto;
+	}
+	@media (max-width: 768px) {
+		.settings {
+			grid-template-columns: 100%;}
+	}
+	.settings fieldset {
+		margin:5px;
+		border-color: #464646;
+	}
+	.settings fieldset.changed {
+		border-color: #f0c52e;
+	}
+	.fieldset__common .settings__text {
+		grid-template-columns: 1fr 120px;
+	}
+	.settings legend {
+		padding: 3px 5px;
+		font-weight: 700;
+		font-size: 15px;
+		text-transform: uppercase;
+		background-color: #f0c52e;
+	}
+	.settings__check {
+		display: flex;
+		align-items: center;
+		margin-bottom: 5px;
+	}
+	.settings__dhcp {
+		display: grid;
+    grid-column-gap: 5px;
+    grid-template-columns: 60px auto;
+	}
+	input[type="checkbox"] {
+		width: 20px;
+		height: 20px;
+		margin-left: 10px;
+		border-color: #464646;
+	}
+	.settings__text {
+		display: grid;
+		grid-template-columns: 60px 90px;
+		align-items: center;
+		grid-column-gap: 15px;
+		grid-row-gap: 10px;
+	}
+	.settings__text.input-big {
+		grid-template-columns: 60px 1fr;
+	}
+	.settings .entry_list__btn {
+		grid-column: 1/-1;
+		margin: 15px auto;
+	}
+	.settings label {
+		font-size: 15px;
+		font-weight: 700;
+	}
+	.settings__btn {
+		grid-column: 1/-1;
+		margin: 15px auto;
+		padding: 5px;
+		text-align: center;
+		font-size: 15px;
+		background-color: #f0c52e;
+		border-color: #f0c52e;
+		border: 1px solid #464646;
+		cursor: pointer;
+		display: block;
+	}
+	.text_info {
+		text-align: center;
+		margin-top: 5px;
+		margin-bottom: 15px;
+		font-style: italic;
+	}
+	.text_info span {
+		font-style: normal;
+    font-family: Georgia;
+    color: #07074b;
+	}
+	.entry_list__header {
+		font-weight: 700;
+	}
+</style>
+</head>
+
+<body>
+	<section class="services">
+		<div class="services_tab">
+			<button class="services_tab__detail" data-target="manage">Управление</button>
+			<button class="services_tab__detail" data-target="ins">Входы</button>
+			<button class="services_tab__detail" data-target="outs">Выходы</button>
+			<button class="services_tab__detail" data-target="settings">Настройки</button>
+			<button class="services_tab__detail" data-target="mqtt_info">MQTT info</button>
+		</div>
+
+		<div class="tab_content" id="manage">
+			<div class="status">
+				<ul class="status__list" id="status_in_list"></ul>
+				<ul class="status__list" id="status_out_list"></ul>
+				<div class="status__text">
+					<span>IP:</span><b id="status_ip"></b>
+					<span>Mqtt:</span><b id="status_mqtt"></b>
+					<span>Uptime (секунд):</span><b id="status_uptime"></b>
+					<span>Версия:</span><b id="version"></b>
+				</div>
+			</div>
+		</div>
+
+		<div class="tab_content" id="ins">
+			<div class="entry_list__header entry_list__header--4">
+				<span></span>
+				<span>Имя</span>
+				<span>Задержка переключения</span>
+				<span>Используется</span>
+			</div>
+			<ol class="pins_list" id="ins_list"></ol>
+		</div>
+
+		<div class="tab_content" id="outs">
+			<div class="entry_list__header">
+				<span></span>
+				<span>Имя</span>
+				<span>Используется</span>
+			</div>
+			<ol class="pins_list" id="outs_list"></ol>
+		</div>
+		
+		<div class="tab_content" id="settings">
+			<div class="settings">
+				<fieldset>
+					<legend>сеть</legend>
+					<div class="settings__check settings__dhcp">
+						<label>DHCP</label>
+						<input id="settings_net_dhcp" type="checkbox">
+					</div>
+					<div class="settings__text input-big">
+						<label>ip</label> <input class="entry_list__name" placeholder="192.168.0.180" id="settings_net_ip" maxlength="15">
+						<label>маска подсети</label> <input class="entry_list__name" placeholder="55.255.255.0" id="settings_net_mask" maxlength="15">
+						<label>ip шлюза</label> <input class="entry_list__name" placeholder="192.168.0.1" id="settings_net_gateway" maxlength="15">
+					</div>
+				</fieldset>
+				<fieldset name="mqtt">
+					<legend>mqtt</legend>
+					<div class="settings__text input-big">
+						<label>сервер</label> <input class="entry_list__name" id="settings_mqtt_server" title="Доменное имя или ip адрес" maxlength="63">
+						<label>топик</label> <input class="entry_list__name" id="settings_mqtt_topic" maxlength="63">
+					</div>
+				</fieldset>
+				<button class="settings__btn" id="settins_save_btn">Сохранить</button>
+			</div>
+		</div>
+
+		<div class="tab_content" id="mqtt_info">
+			<fieldset>
+				<legend>Исходящие топики</legend>
+				<div class="text_info" style="text-align: left;">
+					<ul>
+						<li>
+							<b>&lt;топик&gt;/info</b> - информация по состоянию (json)<br>
+							Формат: <span>
+								{uptime: &lt;uptime&gt;, ip: "&lt;ip&gt;", ins: [&lt;in&gt;,&lt;in&gt;...], outs: [&lt;out&gt;,&lt;out&gt;...]}
+							</span><br>
+							in: <span>{name: "имя входа", enabled: 0|1, value: 0|1, throttle_time: &lt;0-65535&gt;}</span><br>
+							out: <span>{name: "имя выхода", enabled: 0|1, value: 0|1}</span>
+						</li>
+						<li>
+							<b>&lt;топик&gt;/in/&lt;имя входа&gt;</b> [retain] - состояние входа, <span>0 или 1</span>
+						</li>
+						<li>
+							<b>&lt;топик&gt;/out/&lt;имя выхода&gt;</b> [retain] - состояние выхода, <span>0 или 1</span>
+						</li>
+					</ul>
+				</div>
+			</fieldset>
+			<fieldset>
+				<legend>Входящие топики</legend>
+				<div class="text_info" style="text-align: left;">
+					<ul>
+						<li>
+							<b>&lt;топик&gt;/out/&lt;имя выхода&gt;/set</b> - изменить состояние выхода<br>
+							Формат: <span>0 или 1</span>
+						</li>
+					</ul>
+				</div>
+			</fieldset>
+		</div>
+	</section>
+	
+	<script>
+		const url = '';
+		// elID: [fieldName, fieldToElFunc, saveUrl, ElToFieldFunc]
+		const fieldsDataActionsMap = {
+			status_ip: ['ip'],
+			status_uptime: ['uptime'],
+			version: ['version'],
+			settings_mqtt_server: ['mqtt_server', null, '/mqtt_set_server?server='],
+			settings_mqtt_topic: ['mqtt_topic', null, '/mqtt_set_topic?topic='],
+			settings_net_ip: ['static_ip', null, '/net_set_ip?ip='],
+			settings_net_mask: ['subnet_mask', null, '/net_set_subnet?ip='],
+			settings_net_gateway: ['gateway_ip', null, '/net_set_gateway_ip?ip='],
+			settings_net_dhcp: ['dhcp', null, '/net_set_dhcp?dhcp=', val => val ? 1 : 0]
+		};
+		let data = {};
+
+		const $ = document.querySelector.bind(document);
+		async function getResource(url) {
+			let res = await fetch(url);
+			if (!res.ok) {
+				throw new Error(`Could not fetch ${url}, status: ${res.status}`);
+			}
+			const json = await res.json();
+			if (json.error) alert(json.error);
+			return json;
+		}
+
+		function updateDataInfoEls() {
+			for (let [id, [field, convertValFn]] of Object.entries(fieldsDataActionsMap)) {
+				const el = document.getElementById(id);
+				const val = convertValFn ? convertValFn(data[field]) : data[field];
+				if (el.type) {
+					el.type == 'checkbox' ? el.checked = val : el.value = val;
+				} else {
+					el.innerHTML = val;
+				}
+			}
+		}
+
+		function detectAndShowChanges(containerEl) {
+			containerEl.querySelectorAll('select,input').forEach(el => {
+				el.addEventListener('change', () => {
+					containerEl.classList.add('changed');
+				});
+			});
+		}
+
+		/* вкладка управление */
+		async function showManageTab() {
+			data = await getResource(url+'/info');
+			updateDataInfoEls();
+			const mqttEl = $('#status_mqtt');
+			if (data.mqtt_connected) {
+				mqttEl.innerText = 'подлючено';
+				mqttEl.style.color = 'green';
+			} else {
+				mqttEl.innerText = 'отключено';
+				mqttEl.style.color = 'red';
+			}
+			let listEl = $('#status_in_list');
+			listEl.innerHTML = '';
+			data.ins.forEach((pin, id) => {
+				const el = document.createElement('li');
+				el.innerHTML = `<span class="status__list_indicator${pin.value ? ' active' : ''}"></span><span>${pin.name}</span>`;
+				if (!pin.enabled) {
+					el.classList.add('disabled');
+				}
+				listEl.append(el);
+			});
+			listEl = $('#status_out_list');
+			listEl.innerHTML = '';
+			data.outs.forEach((out, id) => {
+				const el = document.createElement('li');
+				el.innerHTML = `<span class="status__list_indicator${out.value ? ' active' : ''}"></span><span>${out.name}</span><button data-id="${id}" type="button">${out.value ? 'выкл' : 'вкл'}</button>`;
+				if (!out.enabled) {
+					el.classList.add('disabled');
+				}
+				listEl.append(el);
+				const bntEl = el.querySelector('button');
+				bntEl.addEventListener('click', async () => {
+					const statusEl = el.querySelector('.status__list_indicator');
+					bntEl.disabled = true;
+					const res = await getResource(`${url}/out_set_value?id=${id}&val=${out.value ? 0 : 1}`);
+					bntEl.disabled = false;
+					if (res.error) return;
+					if (out.value) {
+						statusEl.classList.remove('active');
+						bntEl.innerText = 'вкл';
+						out.value = 0;
+					} else {
+						statusEl.classList.add('active');
+						bntEl.innerText = 'выкл';
+						out.value = 1;
+					}
+				});
+			});
+		}
+
+		/* вкладка входы */
+		async function showInsListTab() {
+			const listEl = $('#ins_list');
+			listEl.innerHTML = '';
+			data.ins.forEach(({name, enabled, throttle_time}, id) => {
+				const el = document.createElement('li');
+				el.innerHTML = `
+				<div class="entry_list__item">
+					<div class="entry_list__counter">${id+1}.</div>
+					<input data-id="name" class="entry_list__name" value="${name}" maxlength="30">
+					<input data-id="throttle" value="${throttle_time}" type="number" min=0 max=65535>
+					<input data-id="enabled" type="checkbox" ${enabled ? 'checked' : ''}>
+					<button class="save_btn" title="Сохранить">Сохранить</button>
+				</div>`;
+				listEl.append(el);
+				detectAndShowChanges(el);
+				const nameEl = el.querySelector('[data-id="name"]');
+				const throttleEl = el.querySelector('[data-id="throttle"]');
+				const enabledEl = el.querySelector('[data-id="enabled"]');
+				const btnEl = el.querySelector('.save_btn');
+				btnEl.addEventListener('click', async () => {
+					nameEl.disabled = throttleEl.disabled = enabledEl.disabled = btnEl.disabled = true;
+					await getResource(`${url}/in_change?id=${id}&throttle_time=${throttleEl.value}&name=${nameEl.value}&enabled=${enabledEl.checked ? 1 : 0}`);
+					data.ins[id].throttle_time = throttleEl.value;
+					data.ins[id].name = nameEl.value;
+					data.ins[id].enabled = enabledEl.checked;
+					nameEl.disabled = throttleEl.disabled = enabledEl.disabled = btnEl.disabled = false;
+					el.classList.remove('changed');
+				});
+			});
+		}
+
+		/* вкладка выходы */
+		async function showOutsListTab() {
+			const listEl = $('#outs_list');
+			listEl.innerHTML = '';
+			data.outs.forEach(({name, enabled}, id) => {
+				const el = document.createElement('li');
+				el.innerHTML = `
+				<div class="entry_list__item">
+					<div class="entry_list__counter">${id+1}.</div>
+					<input data-id="name" class="entry_list__name" value="${name}" maxlength="30">
+					<input data-id="enabled" type="checkbox" ${enabled ? 'checked' : ''}>
+					<button class="save_btn" title="Сохранить">Сохранить</button>
+				</div>`;
+				listEl.append(el);
+				detectAndShowChanges(el);
+				const nameEl = el.querySelector('[data-id="name"]');
+				const enabledEl = el.querySelector('[data-id="enabled"]');
+				const btnEl = el.querySelector('.save_btn');
+				btnEl.addEventListener('click', async () => {
+					nameEl.disabled = enabledEl.disabled = btnEl.disabled = true;
+					await getResource(`${url}/out_change?id=${id}&name=${nameEl.value}&enabled=${enabledEl.checked ? 1 : 0}`);
+					data.outs[id].name = nameEl.value;
+					data.outs[id].enabled = enabledEl.checked;
+					nameEl.disabled = enabledEl.disabled = btnEl.disabled = false;
+					el.classList.remove('changed');
+				});
+			});
+		}
+
+		/* вкладка настройки */
+		const dhcpEl = $('#settings_net_dhcp');
+		function onChangeDhcp() {
+			const els = [$('#settings_net_ip'), $('#settings_net_mask'), $('#settings_net_gateway')];
+			els.forEach(el => el.disabled = dhcpEl.checked);
+		}
+		async function showSettingsTab() {
+			data = await getResource(url+'/info');
+			updateDataInfoEls();
+			onChangeDhcp();
+		}
+		dhcpEl.addEventListener('click', onChangeDhcp);
+		document.querySelectorAll('#settings fieldset').forEach(el => detectAndShowChanges(el));
+		const settinsSaveBtnEl = $('#settins_save_btn');
+		settinsSaveBtnEl.addEventListener('click', async () => {
+			settinsSaveBtnEl.disabled = true;
+			for (let [id, [fieldName, , saveUrl, ElToFieldFunc]] of Object.entries(fieldsDataActionsMap)) {
+				if (!saveUrl) continue;
+				const el = document.getElementById(id);
+				let val = el.type == 'checkbox' ? el.checked : el.value;
+				if (ElToFieldFunc) val = ElToFieldFunc(val);
+				const oldVal = data[fieldName];
+				if (val == oldVal) continue;
+				await getResource(url + saveUrl + val);
+			}
+			document.querySelectorAll('#settings fieldset').forEach(el => el.classList.remove('changed'));
+			await showSettingsTab();
+			settinsSaveBtnEl.disabled = false;
+			alert('Настройки успешно сохранены');
+		});
+
+		function showActiveTab(id) {
+			const tabs = document.querySelectorAll('.tab_content');
+			const activeItem = document.getElementById(id);
+			if (id == 'manage') {
+				showManageTab();
+			} else if (id == 'ins') {
+				showInsListTab();
+			} else if (id == 'outs') {
+				showOutsListTab();
+			} else if (id == 'settings') {
+				showSettingsTab();
+			}
+			tabs.forEach(item => item.style.display = 'none');
+			activeItem.style.display = 'block';
+			document.querySelectorAll('.services_tab__detail').forEach(item => item.classList.remove('current'));
+			$(`[data-target="${id}"]`).classList.add('current');
+		}
+		document.querySelectorAll('.services_tab__detail').forEach(item => {
+			item.addEventListener('click', evt => {
+				const btn = evt.target.getAttribute('data-target');
+				showActiveTab(btn);
+			});
+		});
+		showActiveTab('manage');			
+	</script>
+</body>
+
+</html>
